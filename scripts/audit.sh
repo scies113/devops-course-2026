@@ -36,4 +36,10 @@ check "Конфигурация Nginx синтаксически коррект�
 check "Сертификат валиден минимум 30 дней" openssl x509 -checkend 2592000 -noout -in /etc/ssl/certs/devops.crt
 check "Безопасность прав: отсутствие o+w файлов и права 600 на ключ" bash -c '[ -z "$(find /var/www/devops-site -perm -o+w)" ] && [ "$(sudo stat -c "%a" /etc/ssl/private/devops.key)" = "600" ]'
 
+echo "=== [5] Контейнеризация ==="
+check "Служба Docker активна" systemctl is-active docker
+check "Контейнер СУБД в состоянии healthy" bash -c '[ "$(docker inspect -f "{{.State.Health.Status}}" app-db-1 2>/dev/null)" = "healthy" ]'
+check "Порты 5000 и 5432 не прослушиваются кроме 127.0.0.1" bash -c '! ss -tln | grep -E ":(5000|5432)\b" | grep -v "127\.0\.0\.1:5000"'
+check "Права файла ~/app/.env равны 600" bash -c '[ "$(stat -c "%a" "$HOME/app/.env" 2>/dev/null)" = "600" ]'
+
 exit $FAILED
